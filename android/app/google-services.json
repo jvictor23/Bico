@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "855229302697",
+    "firebase_url": "https://bico-94a60.firebaseio.com",
+    "project_id": "bico-94a60",
+    "storage_bucket": "bico-94a60.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:855229302697:android:cd115b712b2eaff09de6b8",
+        "android_client_info": {
+          "package_name": "com.jv.flutter.app.bico"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "855229302697-85dpceut0outiqq0t3q4jsla4g6f9ema.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jv.flutter.app.bico",
+            "certificate_hash": "da6cbff81e0a27fb90c0595017b620562aa94b9a"
+          }
+        },
+        {
+          "client_id": "855229302697-v6dese7tedb2fj6ai5fagf3mim29goj5.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDKkwcVRLdP8oTX40gU1_DSIjUydZKV4mA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "855229302697-v6dese7tedb2fj6ai5fagf3mim29goj5.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
