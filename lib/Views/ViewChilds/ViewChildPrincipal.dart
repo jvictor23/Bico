@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bico/Connection/Banco.dart';
 import 'package:bico/Entity/Operario.dart';
 import 'package:bico/Views/ViewChilds/ViewChildPerfil.dart';
@@ -7,6 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:via_cep_search/via_cep_search.dart';
 
 class ViewChildPrincipal extends StatefulWidget {
   @override
@@ -22,7 +25,9 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
   Future<List<Operario>> _recuperarOperarios() async {
     Firestore db = Firestore.instance;
     QuerySnapshot snapshot;
-    snapshot = await db.collection("Usuarios").orderBy("estrelas", descending: true).getDocuments();
+    //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: _dados["cidade"]).where("tipoPerfil", isEqualTo: "operario").getDocuments();
+      snapshot = await db.collection("Usuarios").orderBy("estrelas", descending: true).getDocuments();
+    //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: "Cocalzinho").getDocuments();
 
     List<Operario> listaOperarios = List();
 
@@ -49,7 +54,11 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
     Database banco = await Banco().getBanco();
     String sql = "SELECT * FROM Usuario";
     List dado = await banco.rawQuery(sql);
-    _dados = dado[0];
+    setState(() {
+      _dados = dado[0];
+    });
+
+
   }
 
   @override
@@ -60,14 +69,13 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return _dados == null ? Center(child: CircularProgressIndicator(),) : Scaffold(
         body: FutureBuilder<List<Operario>>(
             future: _recuperarOperarios(),
             // ignore: missing_return
             builder: (context, snapshot) {
               switch (snapshot.connectionState) {
                 case ConnectionState.none:
-                // TODO: Handle this case.
                   break;
                 case ConnectionState.waiting:
                   return Center(
@@ -75,10 +83,14 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
                   );
                   break;
                 case ConnectionState.active:
-                // TODO: Handle this case.
                   break;
                 case ConnectionState.done:
-                  return ListView.builder(
+                
+                  if(snapshot.data.length == 0){
+                    return Center(child: Text("Nenhum dado encontrado!"),);                    
+                  }else{
+
+                    return ListView.builder(
                       itemCount: snapshot.data.length,
                       itemBuilder: (context, index) {
                         List<Operario> listaItens = snapshot.data;
@@ -191,6 +203,8 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
                               )),
                         );
                       });
+                  }
+
                   break;
               }
             }));

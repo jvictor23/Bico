@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Views/ViewChildEscolherImagem.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -52,7 +53,7 @@ class _ViewEscolhaPerfilState extends State<ViewEscolhaPerfil> {
                                           operario)));
                             },
                             child: Card(
-                                color: Colors.teal,
+                                color: Colors.grey,
                                 child: Center(
                                     child: Image.asset("images/PerfilOperario.png"))),
                           )),
@@ -78,7 +79,7 @@ class _ViewEscolhaPerfilState extends State<ViewEscolhaPerfil> {
                                           operario)));
                             },
                             child: Card(
-                                color: Colors.teal,
+                                color: Colors.grey,
                                 child: Center(
                                     child: Image.asset("images/PerfilCliente.png"))),
                           )),
@@ -172,9 +173,11 @@ class _EscolhendoPerfilState extends State<EscolhendoPerfil> {
   @override
   Widget build(BuildContext context) {
     Timer(Duration(seconds: 1), () {
-      setState(() {
+      if(this.mounted){
+        setState(() {
         _tempo = true;
       });
+      }
     });
     return Scaffold(
       body: Hero(
@@ -182,6 +185,7 @@ class _EscolhendoPerfilState extends State<EscolhendoPerfil> {
           child: CustomScrollView(
             slivers: <Widget>[
               SliverAppBar(
+                backgroundColor: Colors.grey,
                 expandedHeight: (MediaQuery.of(context).size.height / 4) ,
                 floating: true,
                 pinned: true,
@@ -239,14 +243,14 @@ class _EscolhendoPerfilState extends State<EscolhendoPerfil> {
                       Padding(
                         padding: EdgeInsets.fromLTRB(24, 8, 24, 0),
                         child: RaisedButton(
-                          color: Colors.teal,
                           onPressed: () {
                             _escolherPerfil();
                           },
+                          color: Cores().corButton(),
                           child: Text(
                             "Avançar",
-                            style: TextStyle(color: Colors.white),
                           ),
+                          textColor: Cores().corText(),
                         ),
                       )
                     ],

@@ -183,11 +183,10 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
                                             MaterialPageRoute(
                                                 builder: (context) =>
                                                     ViewChildConfigPerfil(context))).then((res){
-
                                           setState(() {
                                             _iniciarBanco();
                                           });
-
+                                          
                                         });
                                       },
                                       child: Icon(Icons.settings, color: Cores().corIcons(),),

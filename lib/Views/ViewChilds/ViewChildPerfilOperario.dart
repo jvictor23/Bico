@@ -84,7 +84,7 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                                 left: Radius.circular(25)),
                                             child: CachedNetworkImage(
                                               imageUrl:
-                                              widget.operario.imagemPerfil,
+                                              widget.operario.imagemPerfil == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : widget.operario.imagemPerfil,
                                               filterQuality: FilterQuality.medium,
                                               placeholder: (context, url) =>
                                                   Center(

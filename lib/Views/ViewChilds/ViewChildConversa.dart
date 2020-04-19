@@ -2,6 +2,7 @@ import 'dart:async';
 
 
 import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Entity/Conversa.dart';
 import 'package:bico/Entity/Mensagem.dart';
 import 'package:bico/Entity/Operario.dart';
@@ -288,10 +289,10 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
           ),
           FloatingActionButton(
             onPressed: () => _enviarMensagem(),
-            backgroundColor: Colors.teal,
+            backgroundColor: Cores().corButton(),
             child: Icon(
               Icons.send,
-              color: Colors.white,
+              color: Cores().corIcons(),
             ),
             mini: true,
           )

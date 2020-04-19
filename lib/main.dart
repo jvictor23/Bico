@@ -1,3 +1,4 @@
+import 'package:bico/Connection/Banco.dart';
 import 'package:bico/Views/ViewEscolhaPerfil.dart';
 import 'package:bico/Views/ViewLogin.dart';
 import 'package:bico/Views/ViewMain.dart';

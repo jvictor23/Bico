@@ -3,6 +3,7 @@ import 'dart:io';
 
 
 import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Entity/Operario.dart';
 import 'package:bico/Entity/Usuario.dart';
 import 'package:bico/Views/ViewMain.dart';
@@ -28,6 +29,7 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
   _pegarImagemCamera() async {
     File imagemSelecionada;
     imagemSelecionada = await ImagePicker.pickImage(source: ImageSource.camera, imageQuality: 50);
+    if(imagemSelecionada != null){
     setState(() {
       _file = imagemSelecionada;
       _load = true;
@@ -37,20 +39,23 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
         _load = false;
       });
     });
+    }
   }
 
   _pegarImagemGaleria() async {
     File imagemSelecionada;
     imagemSelecionada = await ImagePicker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    setState(() {
+    if(imagemSelecionada != null){
+      setState(() {
       _file = imagemSelecionada;
       _load = true;
     });
-    Timer(Duration(milliseconds: 2300),(){
+    Timer(Duration(milliseconds: 500),(){
       setState(() {
         _load = false;
       });
     });
+    }
   }
 
   _iniciarBanco()async{
@@ -233,19 +238,18 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
                           onPressed: () {
                             _pegarImagemCamera();
                           },
-                          color: Colors.teal,
+                          color: Cores().corButton(),
                           child: Text(
                             "Câmera",
-                            style: TextStyle(color: Colors.white),
                           )),
                       FlatButton(
                           onPressed: () {
                             _pegarImagemGaleria();
                           },
-                          color: Colors.teal,
+                          textColor: Cores().corText(),
+                          color: Cores().corButton(),
                           child: Text(
                             "Galeria",
-                            style: TextStyle(color: Colors.white),
                           ))
                     ],
                   ),
@@ -256,26 +260,22 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
                   child: _file == null ? null : RaisedButton(
                     child: Text(
                       "Remover imagem",
-                      style: TextStyle(color: Colors.white),
                     ),
                     onPressed: () {
                       _removerImagem();
                     },
-                    color: Colors.teal,
+                    textColor: Cores().corText(),
+                    color: Cores().corButton(),
                   ),
                 ),
 
                 Padding(
                   padding: EdgeInsets.only(top: 50),
                   child: RaisedButton(
-                    child: _file == null ? Text(
-                      "Pular",
-                      style: TextStyle(color: Colors.white),
-                    ) : Text(
+                    child: Text(
                       "Confirmar",
-                      style: TextStyle(color: Colors.white),
                     ),
-                    onPressed: () {
+                    onPressed: _file == null ? null : () {
                       pr = ProgressDialog(context);
                       pr.style(
                         message: "Carregando...",
@@ -283,17 +283,18 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
                       pr.show();
                       _confirmando();
                     },
-                    color: Colors.teal,
+                    textColor: Cores().corText(),
+                    color: Cores().corButton(),
                   ),
                 ),
 
-                Padding(
+               /* Padding(
                   padding: EdgeInsets.only(top: 10, right: 16, left: 16),
                   child: _file == null ? Text(
                     "Se pular esta etapa, não se preocupe. Você pode colocar imagem no perfil quando quiser.",
                     textAlign: TextAlign.justify,
                   ) : null,
-                )
+                )*/
               ],
             ),
           )),

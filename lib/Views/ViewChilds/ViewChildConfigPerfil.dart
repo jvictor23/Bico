@@ -10,8 +10,11 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:via_cep_search/via_cep_search.dart';
 
 class ViewChildConfigPerfil extends StatefulWidget {
   @override
@@ -26,12 +29,14 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   String _nome;
   String _telefone;
-  String _cidade;
   String _tipo;
   String _imagem;
   Database banco;
   File _img;
-
+  TextEditingController _controllerCep = TextEditingController();
+  TextEditingController _controllerCidade = TextEditingController();
+  var maskFormatter = new MaskTextInputFormatter(mask: '(##) # ####-####', filter: { "#": RegExp(r'[0-9]') });
+  
   _iniciarBanco() async {
     banco = await Banco().getBanco();
     String sql = "SELECT * FROM Usuario";
@@ -41,7 +46,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
       _dadosCarregado = true;
       _nome = _dados["nome"];
       _telefone = _dados["telefone"];
-      _cidade = _dados["cidade"];
+      _controllerCidade = TextEditingController(text: _dados["cidade"]);
       _tipo = _dados["tipoOperario"];
       _imagem = _dados["imagem"];
     });
@@ -71,7 +76,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
     if (_dados["tipoPerfil"] == "operario") {
       if (_nome.isNotEmpty) {
         if (_telefone.isNotEmpty) {
-          if (_cidade.isNotEmpty) {
+          if (_controllerCidade.text.isNotEmpty) {
             if (_tipo.isNotEmpty) {
               if (_img == null) {
                 _atualizarDados();
@@ -85,7 +90,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
     } else {
       if (_nome.isNotEmpty) {
         if (_telefone.isNotEmpty) {
-          if (_cidade.isNotEmpty) {
+          if (_controllerCidade.text.isNotEmpty) {
             if (_img == null) {
               _atualizarDados();
             } else {
@@ -102,7 +107,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
       Operario operario = Operario();
       operario.nome = _nome;
       operario.telefone = _telefone;
-      operario.cidade = _cidade;
+      operario.cidade = _controllerCidade.text;
       operario.tipo = _tipo;
       operario.tipoPerfil = _dados["tipoPerfil"];
       operario.id = _dados["id"];
@@ -117,7 +122,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
       Usuario usuario = Usuario();
       usuario.nome = _nome;
       usuario.telefone = _telefone;
-      usuario.cidade = _cidade;
+      usuario.cidade = _controllerCidade.text;
       usuario.tipoPerfil = _dados["tipoPerfil"];
       usuario.id = _dados["id"];
       usuario.email = _dados["email"];
@@ -166,6 +171,123 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
   void initState() {
     super.initState();
     _iniciarBanco();
+  }
+
+  _digitarCep(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("Cancelar")),
+              FlatButton(
+                  onPressed: () {
+                    if (_controllerCep.text.isNotEmpty) {
+                      _mostrarCidades(context);
+                    } else {
+                      Fluttertoast.showToast(
+                          msg: "O CEP não pode ficar vazio!",
+                          toastLength: Toast.LENGTH_LONG,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                          gravity: ToastGravity.CENTER);
+                    }
+                  },
+                  child: Text("Confirmar"))
+            ],
+            title: Text("Digite o CEP de sua cidade"),
+            content: TextField(
+              textCapitalization: TextCapitalization.sentences,
+              controller: _controllerCep,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: "CEP",
+                border:
+                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                contentPadding: EdgeInsets.only(left: 16, top: 32),
+              ),
+              showCursor: false,
+              style: TextStyle(
+                fontSize: 17,
+              ),
+            ),
+          );
+        });
+  }
+
+  _mostrarCidades(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            actions: <Widget>[
+              FlatButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("Cancelar")),
+            ],
+            title: Text("Escolha a sua cidade"),
+            content: FutureBuilder<ViaCepSearch>(
+                future: ViaCepSearch.getInstance(_controllerCep.text),
+                builder: (context, snapshot) {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                      // TODO: Handle this case.
+                      break;
+                    case ConnectionState.waiting:
+                      return Center(
+                        child: CircularProgressIndicator(),
+                      );
+                      break;
+                    case ConnectionState.active:
+                      // TODO: Handle this case.
+                      break;
+                    case ConnectionState.done:
+                      if(snapshot.data.localidade == null){
+                        return Center(child: Text("Nenhuma cidade encontrada, verifique o cep digitado e tente novamente"),);
+                      }else{
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: 1,
+                          itemBuilder: (context, index) {
+                            return Column(
+                              children: <Widget>[
+                                ListTile(
+                                  onTap: () {
+                                    setState(() {
+                                      _controllerCidade = 
+                                         TextEditingController(text: snapshot.data.localidade);
+                                    });
+                                    Navigator.pop(context);
+                                    Navigator.pop(context);
+                                  },
+                                  title: Text(snapshot.data.localidade),
+                                ),
+                                snapshot.data.bairro.isEmpty ? Text("") : ListTile(
+                                  onTap: () {
+                                   setState(() {
+                                      _controllerCidade = 
+                                         TextEditingController(text: snapshot.data.bairro);
+                                    });
+                                    Navigator.pop(context);
+                                    Navigator.pop(context);
+                                  },
+                                  title: Text(snapshot.data.bairro),
+                                )
+                              ],
+                            );
+                          });
+                      }
+                      break;
+                  }
+                }),
+          );
+        });
   }
 
   @override
@@ -273,6 +395,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                     _telefone = result;
                   },
                   initialValue: _telefone,
+                  inputFormatters: [maskFormatter],
                   decoration: InputDecoration(
                       labelText: "Telefone",
                       border: OutlineInputBorder(
@@ -288,10 +411,11 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: TextFormField(
-                  onChanged: (result) {
-                    _cidade = result;
+                  onTap: (){
+                    _digitarCep(context);
                   },
-                  initialValue: _cidade,
+                  readOnly: true,
+                  controller: _controllerCidade,
                   decoration: InputDecoration(
                       labelText: "Cidade",
                       border: OutlineInputBorder(
