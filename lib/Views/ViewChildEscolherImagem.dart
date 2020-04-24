@@ -2,13 +2,9 @@ import 'dart:async';
 import 'dart:io';
 
 
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
-import 'package:bico/Entity/Operario.dart';
-import 'package:bico/Entity/Usuario.dart';
 import 'package:bico/Views/ViewMain.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:progress_dialog/progress_dialog.dart';
@@ -18,6 +14,7 @@ import 'package:sqflite/sqflite.dart';
 class ViewEscolherImagem extends StatefulWidget {
   @override
   _ViewEscolherImagemState createState() => _ViewEscolherImagemState();
+  
 }
 
 class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
@@ -25,6 +22,7 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
   bool _load = false;
   ProgressDialog pr;
   Database banco;
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
 
   _pegarImagemCamera() async {
     File imagemSelecionada;
@@ -58,134 +56,21 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
     }
   }
 
-  _iniciarBanco()async{
-    banco = await Banco().getBanco();
-    List<dynamic> list = await banco.rawQuery("select * from Usuario");
-    for(var dado in list){
-      print(dado);
-    }
-  }
+  
 
   _confirmando()async{
-    Firestore db = Firestore.instance;
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    var dados = dado[0];
-
+   
     if(_file == null){
-      if(dados["tipoPerfil"] == "operario"){
-        Operario usuario = Operario();
-        usuario.id = dados["id"];
-        usuario.nome = dados["nome"];
-        usuario.telefone = dados["telefone"];
-        usuario.cidade = dados["cidade"];
-        usuario.email = dados["email"];
-        usuario.senha = dados["senha"];
-        usuario.tipoPerfil = dados["tipoPerfil"];
-        usuario.tipo = dados["tipoOperario"];
-
-        db.collection("Usuarios").document(usuario.id).setData(usuario.toMap());
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
-
-      }else{
-        Usuario usuario = Usuario();
-        usuario.id = dados["id"];
-        usuario.nome = dados["nome"];
-        usuario.telefone = dados["telefone"];
-        usuario.cidade = dados["cidade"];
-        usuario.email = dados["email"];
-        usuario.senha = dados["senha"];
-        usuario.tipoPerfil = dados["tipoPerfil"];
-
-        db.collection("Usuarios").document(usuario.id).setData(usuario.toMap());
-        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
-      }
+      
     }else{
-      if(dados["tipoPerfil"] == "operario"){
-        Operario usuario = Operario();
-        usuario.id = dados["id"];
-        usuario.nome = dados["nome"];
-        usuario.telefone = dados["telefone"];
-        usuario.cidade = dados["cidade"];
-        usuario.email = dados["email"];
-        usuario.senha = dados["senha"];
-        usuario.tipoPerfil = dados["tipoPerfil"];
-        usuario.tipo = dados["tipoOperario"];
-        _uploadImage(usuario, _file);
-      }else{
-        Usuario usuario = Usuario();
-        usuario.id = dados["id"];
-        usuario.nome = dados["nome"];
-        usuario.telefone = dados["telefone"];
-        usuario.cidade = dados["cidade"];
-        usuario.email = dados["email"];
-        usuario.senha = dados["senha"];
-        usuario.tipoPerfil = dados["tipoPerfil"];
-
-        _uploadImage(usuario, _file);
+      if(await _controllerUsuario.uploadImage(_file)){
+        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);  
       }
+
+      
     }
-
   }
 
-  _uploadImage(var usuario, File file){
-    FirebaseStorage storage = FirebaseStorage.instance;
-    StorageReference pastaRaiz = storage.ref();
-    StorageReference arquivo = pastaRaiz.child("imagemPerfilUsuario").child(usuario.id+".JPEG");
-
-    StorageUploadTask task = arquivo.putFile(file);
-
-    task.events.listen((StorageTaskEvent storageTaskEvent){
-
-      /*if(storageTaskEvent.type == StorageTaskEventType.progress){
-        setState(() {
-          _upImage = true;
-        });
-      }else if(storageTaskEvent.type == StorageTaskEventType.success){
-        setState(() {
-          _upImage = false;
-        });
-      }*/
-
-      task.onComplete.then((StorageTaskSnapshot snapshot){
-
-        _recuperarUrlImagem(snapshot,usuario);
-
-      });
-
-
-    });
-
-  }
-
-  _recuperarUrlImagem(StorageTaskSnapshot snapshot, var usuario)async{
-    String url = await snapshot.ref.getDownloadURL();
-    String sql = "SELECT * FROM Usuario";
-    List dados = await banco.rawQuery(sql);
-    var dado = dados[0];
-    usuario.imagemPerfil = url;
-    Map<String, dynamic> dadosUpdate ={
-      "imagem" : usuario.imagemPerfil
-    };
-
-    banco.update(
-        "Usuario",
-        dadosUpdate,
-        where: "id = ?",
-        whereArgs: [dado["id"]]
-    );
-
-
-
-    _salvarUsuario(usuario);
-
-  }
-
-  _salvarUsuario(var usuario){
-    Firestore db = Firestore.instance;
-    db.collection("Usuarios").document(usuario.id).setData(usuario.toMap());
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
-  }
 
   _removerImagem(){
     setState(() {
@@ -196,7 +81,7 @@ class _ViewEscolherImagemState extends State<ViewEscolherImagem> {
   @override
   void initState() {
     super.initState();
-    _iniciarBanco();
+    
   }
 
   @override

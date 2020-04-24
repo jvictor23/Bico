@@ -1,17 +1,12 @@
 import 'dart:io';
 
-
-import 'package:bico/Connection/Banco.dart';
 import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Entity/Postagem.dart';
-import 'package:bico/Views/ViewMain.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:progress_dialog/progress_dialog.dart';
-import 'package:sqflite/sqflite.dart';
+
 
 
 class ViewChildPostagem extends StatefulWidget {
@@ -26,6 +21,7 @@ class _ViewChildPostagemState extends State<ViewChildPostagem> {
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   TextEditingController _controllerDescricao = TextEditingController();
   ProgressDialog pr;
+  
 
   _configImage()async{
     print("Entrou");
@@ -66,44 +62,11 @@ class _ViewChildPostagemState extends State<ViewChildPostagem> {
   }
 
   _confirmarPostagem(var context)async{
-    Database banco = await Banco().getBanco();
-    List<dynamic> lista = await banco.rawQuery("select id from Usuario");
-    var dado = lista[0];
     Postagem postagem = Postagem();
-    postagem.idUser = dado["id"];
     postagem.descricao = _controllerDescricao.text;
-    _uploadImage(postagem, context);
+    postagem.file = _imagemModificar;
+    _controllerUsuario.uploadPostagem(postagem, context);
   }
-
-
-  _uploadImage(Postagem postagem, context){
-    FirebaseStorage storage = FirebaseStorage.instance;
-    StorageReference pastaRaiz = storage.ref();
-    StorageReference arquivo = pastaRaiz.child("Postagem").child(postagem.idUser).child("cimentado"+postagem.idUser+Timestamp.now().toString()+".JPEG");
-    StorageUploadTask task = arquivo.putFile(_imagemModificar);
-
-    task.onComplete.then((StorageTaskSnapshot snapshot){
-
-      _recuperarUrlImagem(snapshot,postagem, context);
-
-    });
-
-  }
-
-  _recuperarUrlImagem(StorageTaskSnapshot snapshot, Postagem postagem, var context)async{
-    String url = await snapshot.ref.getDownloadURL();
-    postagem.imagem = url;
-
-    _salvarPostagem(postagem, context);
-
-  }
-
-  _salvarPostagem(Postagem postagem, context){
-    Firestore db = Firestore.instance;
-    db.collection("Postagem").document(postagem.idUser).collection(postagem.idUser).add(postagem.toMap());
-    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
-  }
-
 
 
   @override

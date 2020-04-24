@@ -1,11 +1,11 @@
 import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
-import 'package:bico/Entity/Usuario.dart';
+import 'package:bico/Entity/Cliente.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:via_cep_search/via_cep_search.dart';
+
 
 class ViewCadastro extends StatefulWidget {
   @override
@@ -15,33 +15,33 @@ class ViewCadastro extends StatefulWidget {
 class _ViewCadastroState extends State<ViewCadastro> {
   TextEditingController _controllerNome = TextEditingController();
   TextEditingController _controllerTelefone = TextEditingController();
-  TextEditingController _controllerCidade = TextEditingController();
+  //TextEditingController _controllerCidade = TextEditingController();
   TextEditingController _controllerEmail = TextEditingController();
   TextEditingController _controllerSenha = TextEditingController();
-  TextEditingController _controllerCep = TextEditingController();
   FocusNode _focus1 = FocusNode();
   FocusNode _focus2 = FocusNode();
   FocusNode _focus3 = FocusNode();
   FocusNode _focus4 = FocusNode();
   bool _loading = false;
-  var maskFormatter = new MaskTextInputFormatter(mask: '(##) # ####-####', filter: { "#": RegExp(r'[0-9]') });
+  var _maskFormatter = new MaskTextInputFormatter(mask: '(##) # ####-####', filter: { "#": RegExp(r'[0-9]') });
+  
 
   ControllerUsuario _controllerUsuario = ControllerUsuario();
 
   cadastrarUsuario() {
-    Usuario usuario = Usuario();
-    usuario.nome = _controllerNome.text;
-    usuario.telefone = _controllerTelefone.text;
-    usuario.cidade = _controllerCidade.text;
-    usuario.email = _controllerEmail.text;
-    usuario.senha = _controllerSenha.text;
-    _controllerUsuario.cadastrarUsuario(usuario, context);
+    Cliente cliente = Cliente();
+    cliente.nome = _controllerNome.text;
+    cliente.telefone = _controllerTelefone.text;
+   // usuario.cidade = _controllerCidade.text;
+    cliente.email = _controllerEmail.text;
+    cliente.senha = _controllerSenha.text;
+    _controllerUsuario.cadastrarUsuario(cliente, context);
   }
 
   verificaCampos() {
     if (_controllerNome.text.isNotEmpty) {
       if (_controllerTelefone.text.isNotEmpty) {
-        if (_controllerCidade.text.isNotEmpty) {
+        /*if (_controllerCidade.text.isNotEmpty) {*/
           if (_controllerEmail.text.isNotEmpty) {
             if (_controllerSenha.text.isNotEmpty) {
               setState(() {
@@ -64,15 +64,15 @@ class _ViewCadastroState extends State<ViewCadastro> {
                 textColor: Colors.white,
                 gravity: ToastGravity.CENTER);
           }
-        } else {
+        } /*else {
           Fluttertoast.showToast(
               msg: "O campo cidade não pode ficar vazio!",
               toastLength: Toast.LENGTH_LONG,
               backgroundColor: Colors.red,
               textColor: Colors.white,
               gravity: ToastGravity.CENTER);
-        }
-      } else {
+        
+      } */else {
         Fluttertoast.showToast(
             msg: "O campo telefone não pode ficar vazio!",
             toastLength: Toast.LENGTH_LONG,
@@ -90,122 +90,7 @@ class _ViewCadastroState extends State<ViewCadastro> {
     }
   }
 
-  _digitarCep(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            actions: <Widget>[
-              FlatButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text("Cancelar")),
-              FlatButton(
-                  onPressed: () {
-                    if (_controllerCep.text.isNotEmpty) {
-                      _mostrarCidades(context);
-                    } else {
-                      Fluttertoast.showToast(
-                          msg: "O CEP não pode ficar vazio!",
-                          toastLength: Toast.LENGTH_LONG,
-                          backgroundColor: Colors.red,
-                          textColor: Colors.white,
-                          gravity: ToastGravity.CENTER);
-                    }
-                  },
-                  child: Text("Confirmar"))
-            ],
-            title: Text("Digite o CEP de sua cidade"),
-            content: TextField(
-              textCapitalization: TextCapitalization.sentences,
-              controller: _controllerCep,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: "CEP",
-                border:
-                    OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                contentPadding: EdgeInsets.only(left: 16, top: 32),
-              ),
-              showCursor: false,
-              style: TextStyle(
-                fontSize: 17,
-              ),
-            ),
-          );
-        });
-  }
-
-  _mostrarCidades(BuildContext context) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            actions: <Widget>[
-              FlatButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: Text("Cancelar")),
-            ],
-            title: Text("Escolha a sua cidade"),
-            content: FutureBuilder<ViaCepSearch>(
-                future: ViaCepSearch.getInstance(_controllerCep.text),
-                builder: (context, snapshot) {
-                  switch (snapshot.connectionState) {
-                    case ConnectionState.none:
-                      // TODO: Handle this case.
-                      break;
-                    case ConnectionState.waiting:
-                      return Center(
-                        child: CircularProgressIndicator(),
-                      );
-                      break;
-                    case ConnectionState.active:
-                      // TODO: Handle this case.
-                      break;
-                    case ConnectionState.done:
-                      if(snapshot.data.localidade == null){
-                        return Center(child: Text("Nenhuma cidade encontrada, verifique o cep digitado e tente novamente"),);
-                      }else{
-                        return ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: 1,
-                          itemBuilder: (context, index) {
-                            return Column(
-                              children: <Widget>[
-                                ListTile(
-                                  onTap: () {
-                                    setState(() {
-                                      _controllerCidade = TextEditingController(
-                                          text: snapshot.data.localidade);
-                                    });
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                  },
-                                  title: Text(snapshot.data.localidade),
-                                ),
-                                snapshot.data.bairro.isEmpty ? Text("") : ListTile(
-                                  onTap: () {
-                                    setState(() {
-                                      _controllerCidade = TextEditingController(
-                                          text: snapshot.data.bairro);
-                                    });
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                  },
-                                  title: Text(snapshot.data.bairro),
-                                )
-                              ],
-                            );
-                          });
-                      }
-                      break;
-                  }
-                }),
-          );
-        });
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -250,7 +135,7 @@ class _ViewCadastroState extends State<ViewCadastro> {
                   },
                   focusNode: _focus1,
                   controller: _controllerTelefone,
-                  inputFormatters: [maskFormatter],
+                  inputFormatters: [_maskFormatter],
                   keyboardType: TextInputType.number,
                   decoration: InputDecoration(
                       labelText: "Telefone",
@@ -264,7 +149,7 @@ class _ViewCadastroState extends State<ViewCadastro> {
                   ),
                 ),
               ),
-              Padding(
+              /*Padding(
                 padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
                 child: TextField(
                   readOnly: true,
@@ -290,7 +175,8 @@ class _ViewCadastroState extends State<ViewCadastro> {
                     fontSize: 17,
                   ),
                 ),
-              ),
+              ),*/
+
               Padding(
                 padding: EdgeInsets.only(left: 16, right: 16, bottom: 8),
                 child: TextField(

@@ -1,9 +1,12 @@
+import 'dart:io';
+
 class Postagem{
   String _idUser;
   String _nomeUser;
   String _descricao;
   String _tipoDeOperario;
   String _imagem;
+  File _file;
 
   Postagem();
 
@@ -32,5 +35,11 @@ class Postagem{
 
   set descricao(String value) {
     _descricao = value;
+  }
+
+  File get file => _file;
+
+  set file(File value) {
+    _file = value;
   }
 }

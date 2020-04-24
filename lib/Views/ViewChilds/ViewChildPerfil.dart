@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Views/ViewChilds/ViewChildConfigPerfil.dart';
 import 'package:bico/Views/ViewChilds/ViewChildPostagem.dart';
@@ -9,7 +9,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:sqflite/sqflite.dart';
+
 
 class ViewChildPerfil extends StatefulWidget {
   @override
@@ -19,27 +19,20 @@ class ViewChildPerfil extends StatefulWidget {
 }
 
 class _ViewChildPerfilState extends State<ViewChildPerfil> {
-  var _dados;
+  
   QuerySnapshot _postagem;
   bool _dadosPronto = false;
-
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
   Firestore db;
-
+DocumentSnapshot _dadosUsuario;
   _iniciarBanco() async {
     CollectionReference postagem;
-    Database banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    setState(() {
-      _dados = dado[0];
-    });
-    print(_dados);
-    // _dados = await db.collection("Usuarios").document(dados["id"]).get();
-    if (_dados["tipoPerfil"] == "operario") {
+    _dadosUsuario = await _controllerUsuario.recuperarUsuarioLogado();
+    if (_dadosUsuario.data["tipoPerfil"] == "operario") {
       postagem = db
           .collection("Postagem")
-          .document(_dados["id"])
-          .collection(_dados["id"]);
+          .document(_dadosUsuario.documentID)
+          .collection(_dadosUsuario.documentID);
       _postagem = await postagem.getDocuments();
     }
 
@@ -96,7 +89,7 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
         ? Scaffold(
         appBar: widget.op
             ? AppBar(
-          title: Text(_dados["nome"]),
+          title: Text(_dadosUsuario.data["nome"]),
         )
             : null,
         body: Container(
@@ -124,7 +117,7 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
                                             borderRadius: BorderRadius.horizontal(
                                                 left: Radius.circular(25)),
                                             child: CachedNetworkImage(
-                                              imageUrl: _dados["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : _dados["imagem"],
+                                              imageUrl: _dadosUsuario.data["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : _dadosUsuario.data["imagem"],
                                               filterQuality: FilterQuality.medium,
                                               placeholder: (context, url) => Center(
                                                   child: CircularProgressIndicator(
@@ -141,26 +134,27 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
                                             CrossAxisAlignment.start,
                                             children: <Widget>[
                                               Text(
-                                                _dados["nome"],
+                                                _dadosUsuario.data["nome"],
                                                 style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w600),
                                               ),
                                               Text(
-                                                _dados["telefone"],
+                                                _dadosUsuario.data["telefone"],
                                                 style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w400),
                                               ),
                                               Text(
-                                                _dados["cidade"],
+                                                
+                                               _dadosUsuario.data["cidade"][0]["nome"],
                                                 style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w400),
                                               ),
-                                              _dados["tipoPerfil"] == "operario"
+                                             _dadosUsuario.data["tipoPerfil"] == "operario"
                                                   ? Text(
-                                                _dados["tipoOperario"],
+                                                _dadosUsuario.data["tipo"],
                                                 style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight:
@@ -196,7 +190,7 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
                               )),
                         ),
                       ),
-                      _dados["tipoPerfil"] == "operario"
+                      _dadosUsuario.data["tipoPerfil"] == "operario"
                           ? Container(
                         width: MediaQuery.of(context).size.width,
                         child: Card(
@@ -238,7 +232,7 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
                   )
                 ]),
               ),
-              _dados["tipoPerfil"] == "operario"
+              _dadosUsuario.data["tipoPerfil"] == "operario"
                   ? SliverList(
                 delegate: SliverChildBuilderDelegate(
                         (context, index) => Container(

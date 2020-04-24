@@ -1,4 +1,5 @@
 import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Views/ViewCadastroCidades.dart';
 import 'package:bico/Views/ViewEscolhaPerfil.dart';
 import 'package:bico/Views/ViewLogin.dart';
 import 'package:bico/Views/ViewMain.dart';
@@ -41,7 +42,9 @@ class _HomeState extends State<Home> {
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ViewLogin()));
     }else{
       var dados  = await db.collection("Usuarios").document(usuarioLogado.uid).get();
-      if(dados.data["tipoPerfil"] == null){
+      if(dados.data["cidade"] == null){
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ViewCadastroCidades()));
+      } else if(dados.data["tipoPerfil"] == null){
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ViewEscolhaPerfil()));
       }else{
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ViewMain()));

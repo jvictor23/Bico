@@ -1,11 +1,12 @@
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Entity/Operario.dart';
+import 'package:bico/Entity/Postagem.dart';
 import 'package:bico/Views/ViewChilds/ViewChildConversa.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:sqflite/sqflite.dart';
+
 
 class ViewChildPerfilOperario extends StatefulWidget {
   @override
@@ -16,38 +17,26 @@ class ViewChildPerfilOperario extends StatefulWidget {
 }
 
 class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
-  bool _dadosPronto = false;
+  
 
-  QuerySnapshot _postagem;
-  Firestore db;
-  var _dados;
   DocumentSnapshot _data;
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
+  List<Postagem> _postagem;
+  bool _dadosProntos = false;
 
   _iniciarBanco() async {
-
-    Database banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    _dados = dado[0];
-    _data =  await db.collection("Avaliacao").document(widget.operario.id).collection(widget.operario.id).document(_dados["id"]).get();
-    CollectionReference postagem;
-    postagem = db
-        .collection("Postagem")
-        .document(widget.operario.id)
-        .collection(widget.operario.id);
-    _postagem = await postagem.getDocuments();
-
-
+    _data = await _controllerUsuario.recuperarEstrelasIndividual(widget.operario.id);
+    _postagem = await _controllerUsuario.recuperarPostagem(widget.operario.id);
 
     setState(() {
-      _dadosPronto = true;
+      _dadosProntos = true;
     });
+   
   }
 
   @override
   void initState() {
     super.initState();
-    db = Firestore.instance;
     _iniciarBanco();
   }
 
@@ -57,8 +46,7 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
         appBar: AppBar(
           title: Text(widget.operario.nome),
         ),
-        body: _dadosPronto
-            ? Container(
+        body: _dadosProntos ? Container(
             child: CustomScrollView(slivers: <Widget>[
               SliverList(
                 delegate: SliverChildListDelegate([
@@ -84,7 +72,7 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                                 left: Radius.circular(25)),
                                             child: CachedNetworkImage(
                                               imageUrl:
-                                              widget.operario.imagemPerfil == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : widget.operario.imagemPerfil,
+                                              widget.operario.imagem == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : widget.operario.imagem,
                                               filterQuality: FilterQuality.medium,
                                               placeholder: (context, url) =>
                                                   Center(
@@ -115,7 +103,7 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                                     fontWeight: FontWeight.w400),
                                               ),
                                               Text(
-                                                widget.operario.cidade,
+                                                widget.operario.cidade.first["nome"],
                                                 style: TextStyle(
                                                     fontSize: 16,
                                                     fontWeight: FontWeight.w400),
@@ -146,20 +134,11 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                               Icon(Icons.star),
                                           onRatingUpdate: (rating) async {
 
-                                            Firestore db = Firestore.instance;
-                                            widget.operario.estrelas = rating;
+                                            _controllerUsuario.avaliarOperario(widget.operario.id, rating);
 
-                                            db.collection("Avaliacao").document(widget.operario.id).collection(widget.operario.id).document(_dados["id"]).setData({"estrelas" : rating});
+                                            
 
-                                            var data = await db.collection("Avaliacao").document(widget.operario.id).collection(widget.operario.id).getDocuments();
-                                            double estrelas = 0.0;
-                                            for(var dado in data.documents){
-                                              estrelas += dado.data["estrelas"];
-                                            }
-
-                                            widget.operario.estrelas = (estrelas / data.documents.length);
-
-                                            db.collection("Usuarios").document(widget.operario.id).setData(widget.operario.toMap());
+                                            
 
 
 
@@ -185,20 +164,12 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                   )
                 ]),
               ),
-              _postagem.documents == null
-                  ? SliverList(
-                delegate: SliverChildListDelegate([
-                  Padding(
-                    padding: EdgeInsets.only(top: 16),
-                    child: Center(
-                      child: Text("Não há nenhuma publicação aqui"),
-                    ),
-                  )
-                ]),
-              )
-                  : SliverList(
+
+
+              SliverList(
                 delegate: SliverChildBuilderDelegate(
-                        (context, index) => Container(
+                        (context, index) => 
+                        Container(
                         width: MediaQuery.of(context).size.width,
                         child: Card(
                             child: Column(
@@ -214,8 +185,7 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                   ),
                                 ),
                                 CachedNetworkImage(
-                                    imageUrl: _postagem.documents[index]
-                                    ["imagem"],
+                                    imageUrl: _postagem[index].imagem,
                                     fit: BoxFit.cover,
                                     width:
                                     MediaQuery.of(context).size.width,
@@ -225,17 +195,15 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                           backgroundColor: Colors.black,
                                         ))),
                                 Padding(
-                                  padding: _postagem.documents[index]
-                                  ["descricao"] ==
+                                  padding: _postagem[index].descricao
+                                  ==
                                       null
                                       ? EdgeInsets.all(0)
                                       : EdgeInsets.all(12),
-                                  child: Text(_postagem.documents[index]
-                                  ["descricao"] ==
+                                  child: Text(_postagem[index].descricao ==
                                       null
                                       ? ""
-                                      : _postagem.documents[index]
-                                  ["descricao"]),
+                                      : _postagem[index].descricao),
                                 ),
                                 Row(
                                   children: <Widget>[
@@ -246,9 +214,11 @@ class _ViewChildPerfilOperarioState extends State<ViewChildPerfilOperario> {
                                 )
                               ],
                             ))),
-                    childCount: _postagem.documents.length),
+                    childCount: _postagem.length),
               )
-            ]))
-            : Center(child: CircularProgressIndicator()));
+
+              
+            ])) : Center(child: CircularProgressIndicator(),)
+            );
   }
 }

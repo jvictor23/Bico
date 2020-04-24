@@ -1,6 +1,6 @@
 import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
-import 'package:bico/Entity/Usuario.dart';
+import 'package:bico/Entity/Cliente.dart';
 import 'package:bico/Views/ViewCadastro.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -23,10 +23,10 @@ class _ViewLoginState extends State<ViewLogin> {
   bool _loading = false;
 
   logarUsuario(){
-    Usuario usuario = Usuario();
-    usuario.email = _controllerEmail.text;
-    usuario.senha = _controllerSenha.text;
-    _controllerUsuario.logarUsuario(usuario, context);
+    Cliente cliente = Cliente();
+    cliente.email = _controllerEmail.text;
+    cliente.senha = _controllerSenha.text;
+    _controllerUsuario.logarUsuario(cliente, context);
   }
 
   verificaCampos(){

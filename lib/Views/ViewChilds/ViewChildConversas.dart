@@ -1,12 +1,10 @@
 import 'dart:async';
 
-
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Entity/Operario.dart';
 import 'package:bico/Views/ViewChilds/ViewChildConversa.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
 
 class ViewChildConversas extends StatefulWidget {
   @override
@@ -14,17 +12,14 @@ class ViewChildConversas extends StatefulWidget {
 }
 
 class _ViewChildConversasState extends State<ViewChildConversas> {
-  var _dados;
+  
   Firestore db = Firestore.instance;
   final _controller = StreamController<QuerySnapshot>.broadcast();
-
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
+  String idUsuarioLogado;
   _iniciarBanco() async {
-    Database banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    setState(() {
-      _dados = dado[0];
-    });
+    
+    idUsuarioLogado = await _controllerUsuario.recuperarIdUsuarioLogado();
 
     _adicionarListenerConversa();
   }
@@ -32,7 +27,7 @@ class _ViewChildConversasState extends State<ViewChildConversas> {
   Stream<QuerySnapshot> _adicionarListenerConversa() {
     final stream = db
         .collection("Conversas")
-        .document(_dados["id"])
+        .document(idUsuarioLogado)
         .collection("ultima_conversa")
         .snapshots();
 
@@ -92,7 +87,7 @@ class _ViewChildConversasState extends State<ViewChildConversas> {
                         Operario op = Operario();
                         op.id = conversa.data["idDestinatario"];
                         op.nome = conversa.data["nome"];
-                        op.imagemPerfil = conversa.data["imagem"];
+                        op.imagem = conversa.data["imagem"];
                         Navigator.push(context, MaterialPageRoute(builder: (context)=> ViewChildConversa(op)));
                       },
                       leading: CircleAvatar(

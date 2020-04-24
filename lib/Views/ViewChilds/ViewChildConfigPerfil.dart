@@ -1,19 +1,18 @@
 import 'dart:io';
 
-import 'package:bico/Connection/Banco.dart';
 import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
+import 'package:bico/Entity/Cidade.dart';
+import 'package:bico/Entity/Cliente.dart';
 import 'package:bico/Entity/Operario.dart';
-import 'package:bico/Entity/Usuario.dart';
 import 'package:bico/Views/ViewLogin.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:via_cep_search/via_cep_search.dart';
 
 class ViewChildConfigPerfil extends StatefulWidget {
@@ -24,31 +23,43 @@ class ViewChildConfigPerfil extends StatefulWidget {
 }
 
 class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
-  var _dados;
   bool _dadosCarregado = false;
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   String _nome;
   String _telefone;
   String _tipo;
   String _imagem;
-  Database banco;
   File _img;
+  DocumentSnapshot _ds;
   TextEditingController _controllerCep = TextEditingController();
-  TextEditingController _controllerCidade = TextEditingController();
+  TextEditingController _controllerCidade1 = TextEditingController();
+  TextEditingController _controllerCidade2 = TextEditingController();
+  String _uf1;
+  String _uf2;
+  List<Map<String,dynamic>> _cidades = List();
+  
   var maskFormatter = new MaskTextInputFormatter(mask: '(##) # ####-####', filter: { "#": RegExp(r'[0-9]') });
   
   _iniciarBanco() async {
-    banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
+    _ds = await _controllerUsuario.recuperarUsuarioLogado();
     setState(() {
-      _dados = dado[0];
+      _nome = _ds.data["nome"];
+      _telefone = _ds.data["telefone"];
+      _tipo = _ds.data["tipo"];
+      _imagem = _ds.data["imagem"];
+      for(var city in _ds.data["cidade"]){
+        Cidade cidade = Cidade();
+        cidade.nome = city["nome"];
+        cidade.uf = city["uf"];
+        _cidades.add(cidade.toMap());
+      }
+      _controllerCidade1 = TextEditingController(text: _cidades.first["nome"]);
+      _uf1 = _cidades.first["uf"];
+      if(_cidades.length > 1){
+        _controllerCidade2 = TextEditingController(text: _cidades.last["nome"]);
+        _uf1 = _cidades.last["uf"];
+      }
       _dadosCarregado = true;
-      _nome = _dados["nome"];
-      _telefone = _dados["telefone"];
-      _controllerCidade = TextEditingController(text: _dados["cidade"]);
-      _tipo = _dados["tipoOperario"];
-      _imagem = _dados["imagem"];
     });
   }
 
@@ -73,15 +84,16 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
   }
 
   _verificaCondicoes() {
-    if (_dados["tipoPerfil"] == "operario") {
+    print("entrou");
+    if (_ds.data["tipoPerfil"] == "operario") {      
       if (_nome.isNotEmpty) {
         if (_telefone.isNotEmpty) {
-          if (_controllerCidade.text.isNotEmpty) {
+          if (_controllerCidade1.text.isNotEmpty) {
             if (_tipo.isNotEmpty) {
               if (_img == null) {
                 _atualizarDados();
               } else {
-                _uploadImage();
+                _controllerUsuario.uploadImage(_img);
               }
             } else {}
           } else {}
@@ -90,11 +102,11 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
     } else {
       if (_nome.isNotEmpty) {
         if (_telefone.isNotEmpty) {
-          if (_controllerCidade.text.isNotEmpty) {
+          if (_controllerCidade1.text.isNotEmpty) {
             if (_img == null) {
               _atualizarDados();
             } else {
-              _uploadImage();
+              _controllerUsuario.uploadImage(_img);
             }
           } else {}
         } else {}
@@ -102,69 +114,103 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
     }
   }
 
-  _atualizarDados() {
-    if (_dados["tipoPerfil"] == "operario") {
+  _atualizarDados() async{
+    if (_ds.data["tipoPerfil"] == "operario") {
+      
+      if(_controllerCidade1.text.isNotEmpty){
+      if(_controllerCidade2.text.isEmpty){
+        _cidades.clear();
+        Cidade cidade = Cidade();
+        cidade.nome = _controllerCidade1.text;
+        cidade.uf = _uf1;
+        _cidades.add(cidade.toMap());
+      }else{
+        _cidades.clear();
+        Cidade cidade = Cidade();
+        cidade.nome = _controllerCidade1.text;
+        cidade.uf = _uf1;
+        _cidades.add(cidade.toMap());
+        cidade.nome = _controllerCidade2.text;
+        cidade.uf = _uf2;
+        _cidades.add(cidade.toMap());
+      }
+
+
       Operario operario = Operario();
-      operario.nome = _nome;
-      operario.telefone = _telefone;
-      operario.cidade = _controllerCidade.text;
-      operario.tipo = _tipo;
-      operario.tipoPerfil = _dados["tipoPerfil"];
-      operario.id = _dados["id"];
-      operario.email = _dados["email"];
-      operario.senha = _dados["senha"];
-      operario.imagemPerfil = _imagem;
-      _controllerUsuario.atualizarDados(operario);
+
+          operario.nome = _nome;
+          operario.telefone = _telefone;
+          operario.cidade = _cidades;
+          operario.email = _ds.data["email"];
+          operario.senha = _ds.data["senha"];
+          operario.tipoPerfil = _ds.data["tipoPerfil"];
+          operario.imagem = _imagem;
+          operario.tipo = _tipo;
+          operario.estrelas = _ds.data["estrelas"];
+
+      await _controllerUsuario.atualizarOperarioLogado(operario);
       Navigator.pop(context,true);
 
       //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
+
+      
+    }else{
+       Fluttertoast.showToast(
+                          msg: "Pelomenos a cidade 1 deve ser cadastrada",
+                          toastLength: Toast.LENGTH_LONG,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                          gravity: ToastGravity.CENTER);
+    }
+
+      
     } else {
-      Usuario usuario = Usuario();
-      usuario.nome = _nome;
-      usuario.telefone = _telefone;
-      usuario.cidade = _controllerCidade.text;
-      usuario.tipoPerfil = _dados["tipoPerfil"];
-      usuario.id = _dados["id"];
-      usuario.email = _dados["email"];
-      usuario.senha = _dados["senha"];
-      usuario.imagemPerfil = _imagem;
-      _controllerUsuario.atualizarDados(usuario);
+
+
+      if(_controllerCidade1.text.isNotEmpty){
+      if(_controllerCidade2.text.isEmpty){
+        _cidades.clear();
+        Cidade cidade = Cidade();
+        cidade.nome = _controllerCidade1.text;
+        cidade.uf = _uf1;
+        _cidades.add(cidade.toMap());
+      }else{
+        _cidades.clear();
+        Cidade cidade = Cidade();
+        cidade.nome = _controllerCidade1.text;
+        cidade.uf = _uf1;
+        _cidades.add(cidade.toMap());
+        cidade.nome = _controllerCidade2.text;
+        cidade.uf = _uf2;
+        _cidades.add(cidade.toMap());
+      }
+
+      Cliente cliente = Cliente();
+      cliente.nome = _nome;
+      cliente.telefone = _telefone;
+      //usuario.cidades = _controllerCidade.text;
+      cliente.tipoPerfil = _ds.data["tipoPerfil"];
+      cliente.email = _ds.data["email"];
+      cliente.senha = _ds.data["senha"];
+      cliente.imagem = _imagem;
+      _controllerUsuario.atualizarClienteLogado(cliente);
       Navigator.pop(context, true);
 
       // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewMain()), (Route<dynamic> rout) => false);
+
+      
+    }else{
+       Fluttertoast.showToast(
+                          msg: "Pelomenos a cidade 1 deve ser cadastrada",
+                          toastLength: Toast.LENGTH_LONG,
+                          backgroundColor: Colors.red,
+                          textColor: Colors.white,
+                          gravity: ToastGravity.CENTER);
     }
-  }
 
-  _uploadImage() {
-    FirebaseStorage storage = FirebaseStorage.instance;
-    StorageReference pastaRaiz = storage.ref();
-    StorageReference arquivo =
-    pastaRaiz.child("imagemPerfilUsuario").child(_dados["id"] + ".JPEG");
 
-    StorageUploadTask task = arquivo.putFile(_img);
-
-    task.events.listen((StorageTaskEvent storageTaskEvent) {
-      /*if(storageTaskEvent.type == StorageTaskEventType.progress){
-        setState(() {
-          _upImage = true;
-        });
-      }else if(storageTaskEvent.type == StorageTaskEventType.success){
-        setState(() {
-          _upImage = false;
-        });
-      }*/
-
-      task.onComplete.then((StorageTaskSnapshot snapshot) {
-        _recuperarUrlImagem(snapshot);
-      });
-    });
-  }
-
-  _recuperarUrlImagem(StorageTaskSnapshot snapshot) async {
-    String url = await snapshot.ref.getDownloadURL();
-    _imagem = url;
-
-    _atualizarDados();
+      
+    }
   }
 
   @override
@@ -173,7 +219,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
     _iniciarBanco();
   }
 
-  _digitarCep(BuildContext context) {
+  _digitarCep(BuildContext context, String tf) {
     showDialog(
         context: context,
         builder: (context) {
@@ -187,7 +233,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
               FlatButton(
                   onPressed: () {
                     if (_controllerCep.text.isNotEmpty) {
-                      _mostrarCidades(context);
+                      _mostrarCidades(context, tf);
                     } else {
                       Fluttertoast.showToast(
                           msg: "O CEP não pode ficar vazio!",
@@ -199,7 +245,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                   },
                   child: Text("Confirmar"))
             ],
-            title: Text("Digite o CEP de sua cidade"),
+            title: Text("Digite o CEP da cidade $tf"),
             content: TextField(
               textCapitalization: TextCapitalization.sentences,
               controller: _controllerCep,
@@ -219,7 +265,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
         });
   }
 
-  _mostrarCidades(BuildContext context) {
+ _mostrarCidades(BuildContext context, String tf) {
     showDialog(
         context: context,
         builder: (context) {
@@ -248,40 +294,63 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                       // TODO: Handle this case.
                       break;
                     case ConnectionState.done:
-                      if(snapshot.data.localidade == null){
-                        return Center(child: Text("Nenhuma cidade encontrada, verifique o cep digitado e tente novamente"),);
-                      }else{
+                      if (snapshot.data.localidade == null) {
+                        return Center(
+                          child: Text(
+                              "Nenhuma cidade encontrada, verifique o cep digitado e tente novamente"),
+                        );
+                      } else {
                         return ListView.builder(
-                          shrinkWrap: true,
-                          itemCount: 1,
-                          itemBuilder: (context, index) {
-                            return Column(
-                              children: <Widget>[
-                                ListTile(
-                                  onTap: () {
-                                    setState(() {
-                                      _controllerCidade = 
-                                         TextEditingController(text: snapshot.data.localidade);
-                                    });
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                  },
-                                  title: Text(snapshot.data.localidade),
-                                ),
-                                snapshot.data.bairro.isEmpty ? Text("") : ListTile(
-                                  onTap: () {
-                                   setState(() {
-                                      _controllerCidade = 
-                                         TextEditingController(text: snapshot.data.bairro);
-                                    });
-                                    Navigator.pop(context);
-                                    Navigator.pop(context);
-                                  },
-                                  title: Text(snapshot.data.bairro),
-                                )
-                              ],
-                            );
-                          });
+                            shrinkWrap: true,
+                            itemCount: 1,
+                            itemBuilder: (context, index) {
+                              return Column(
+                                children: <Widget>[
+                                  ListTile(
+                                    onTap: () {
+                                      setState(() {
+                                        if(tf == "1"){
+                                          _controllerCidade1 =
+                                            TextEditingController(
+                                                text: snapshot.data.localidade);
+                                        _uf1 = snapshot.data.uf;
+                                        }else{
+                                          _controllerCidade2 =
+                                            TextEditingController(
+                                                text: snapshot.data.localidade);
+                                        _uf2 = snapshot.data.uf;
+                                        }
+                                      });
+                                      Navigator.pop(context);
+                                      Navigator.pop(context);
+                                    },
+                                    title: Text(snapshot.data.localidade),
+                                  ),
+                                  snapshot.data.bairro.isEmpty
+                                      ? Text("")
+                                      : ListTile(
+                                          onTap: () {
+                                            setState(() {
+                                               if(tf == "1"){
+                                          _controllerCidade1 =
+                                            TextEditingController(
+                                                text: snapshot.data.bairro);
+                                        _uf1 = snapshot.data.uf;
+                                        }else{
+                                          _controllerCidade2 =
+                                            TextEditingController(
+                                                text: snapshot.data.bairro);
+                                        _uf2 = snapshot.data.uf;
+                                        }
+                                            });
+                                            Navigator.pop(context);
+                                            Navigator.pop(context);
+                                          },
+                                          title: Text(snapshot.data.bairro),
+                                        )
+                                ],
+                              );
+                            });
                       }
                       break;
                   }
@@ -303,8 +372,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                 })
           ],
         ),
-        body: _dadosCarregado
-            ? SingleChildScrollView(
+        body: _dadosCarregado ? SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: <Widget>[
@@ -321,7 +389,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                             left: Radius.circular(25)),
                         child: _img == null
                             ? CachedNetworkImage(
-                          imageUrl: _dados["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : _dados["imagem"],
+                          imageUrl: _ds.data["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : _ds.data["imagem"],
                           filterQuality: FilterQuality.medium,
                           placeholder: (context, url) => Center(
                               child: CircularProgressIndicator(
@@ -408,16 +476,18 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                   ),
                 ),
               ),
+
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
                 child: TextFormField(
+                  
                   onTap: (){
-                    _digitarCep(context);
+                    _digitarCep(context, "1");
                   },
                   readOnly: true,
-                  controller: _controllerCidade,
+                  controller: _controllerCidade1,
                   decoration: InputDecoration(
-                      labelText: "Cidade",
+                      labelText: "Cidade 1",
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10)),
                       contentPadding: EdgeInsets.only(left: 16, top: 32),
@@ -428,9 +498,42 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                   ),
                 ),
               ),
+
+
+
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: _dados["tipoPerfil"] == "operario" ? TextFormField(
+                child: TextFormField(
+                  onTap: (){
+                    _digitarCep(context, "2");
+                  },
+                  readOnly: true,
+                  controller: _controllerCidade2,
+                  decoration: InputDecoration(
+                    suffixIcon: IconButton(icon: Icon(Icons.delete,), onPressed: (){
+                      if(_controllerCidade2 != null){
+                      setState(() {
+                      _controllerCidade2.clear();
+                      _uf2 = null;
+                      });
+                      }
+                    },),
+                      labelText: "Cidade 2",
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                      contentPadding: EdgeInsets.only(left: 16, top: 32),
+                      prefixIcon: Icon(Icons.location_city)),
+                  showCursor: false,
+                  
+                  style: TextStyle(
+                    fontSize: 17,
+                  ),
+                ),
+              ),
+
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: _ds.data["tipoPerfil"] == "operario" ? TextFormField(
                   onChanged: (result) {
                     _tipo = result;
                   },
@@ -453,7 +556,6 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                   onPressed: (){
                     FirebaseAuth auth = FirebaseAuth.instance;
                     auth.signOut();
-                    Banco().deleteBanco();
                     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => ViewLogin()), (Route<dynamic> rout) => false);
                   },
                   child: Text("Sair da conta"),
@@ -461,9 +563,8 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
                 ),)
             ],
           ),
-        )
-            : Center(
-          child: CircularProgressIndicator(),
-        ));
+        ) : Center(child: CircularProgressIndicator(),)
+            
+        );
   }
 }

@@ -1,14 +1,13 @@
 import 'dart:async';
 
-
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Cores/Cores.dart';
 import 'package:bico/Entity/Conversa.dart';
 import 'package:bico/Entity/Mensagem.dart';
 import 'package:bico/Entity/Operario.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:sqflite/sqflite.dart';
+
 
 class ViewChildConversa extends StatefulWidget {
   @override
@@ -19,21 +18,16 @@ class ViewChildConversa extends StatefulWidget {
 
 class _ViewChildConversaState extends State<ViewChildConversa> {
   TextEditingController _mensagemController = TextEditingController();
-  var _dados;
+  
   Firestore db = Firestore.instance;
   final _controller = StreamController<QuerySnapshot>.broadcast();
   ScrollController _scrollController = ScrollController();
-
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
+  DocumentSnapshot _dadosUsuario;
+  
   _iniciarBanco() async {
-    Database banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    setState(() {
-      _dados = dado[0];
-    });
 
-
-
+    _dadosUsuario = await _controllerUsuario.recuperarUsuarioLogado();
 
     _adicionarListenerConversa();
   }
@@ -44,15 +38,15 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
 
     if (textoMensagem.isNotEmpty) {
       Mensagem mensagem = Mensagem();
-      mensagem.idUsuario = _dados["id"];
+      mensagem.idUsuario = _dadosUsuario.documentID;
       mensagem.mensagem = textoMensagem;
       mensagem.time = Timestamp.now().toString();
       _mensagemController.clear();
       //Salvar mensagem para o remetente
-      _salvarMensagem(_dados["id"], widget.operario.id, mensagem);
+      _salvarMensagem(_dadosUsuario.documentID, widget.operario.id, mensagem);
 
       //Salvar mensagem para o destinatario
-      _salvarMensagem(widget.operario.id, _dados["id"], mensagem);
+      _salvarMensagem(widget.operario.id, _dadosUsuario.documentID, mensagem);
 
       _salvarConversa(mensagem);
     }
@@ -63,20 +57,20 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
   _salvarConversa(Mensagem mensagem){
     //Salvar conversa remetente;
     Conversa cRemetente = Conversa();
-    cRemetente.idRemetente = _dados["id"];
+    cRemetente.idRemetente = _dadosUsuario.documentID;
     cRemetente.idDestinatario = widget.operario.id;
     cRemetente.mensagem = mensagem.mensagem;
     cRemetente.nome = widget.operario.nome;
-    cRemetente.imagem = widget.operario.imagemPerfil;
+    cRemetente.imagem = widget.operario.imagem;
     cRemetente.salvar();
 
     //Salvar conversa destinatario
     Conversa cDestinatario = Conversa();
     cDestinatario.idRemetente = widget.operario.id;
-    cDestinatario.idDestinatario = _dados["id"];
+    cDestinatario.idDestinatario = _dadosUsuario.documentID;
     cDestinatario.mensagem = mensagem.mensagem;
-    cDestinatario.nome = _dados["nome"];
-    cDestinatario.imagem = _dados["imagem"];
+    cDestinatario.nome = _dadosUsuario.data["nome"];
+    cDestinatario.imagem = _dadosUsuario.data["imagem"];
     cDestinatario.salvar();
   }
 
@@ -99,7 +93,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
   Stream<QuerySnapshot> _adicionarListenerConversa() {
     final stream = db
         .collection("Mensagens")
-        .document(_dados["id"])
+        .document(_dadosUsuario.documentID)
         .collection(widget.operario.id)
         .orderBy("time", descending: false)
         .snapshots();
@@ -121,7 +115,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
   _apagarMensagem(DocumentSnapshot dados, List<DocumentSnapshot> mensagens)async{
     await db
         .collection("Mensagens")
-        .document(_dados["id"])
+        .document(_dadosUsuario.documentID)
         .collection(widget.operario.id)
         .document(dados["idMensagem"])
         .delete();
@@ -129,7 +123,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
     await db
         .collection("Mensagens")
         .document(widget.operario.id)
-        .collection(_dados["id"])
+        .collection(_dadosUsuario.documentID)
         .document(dados["idMensagem"])
         .delete();
 
@@ -192,7 +186,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
                       Alignment alinhamento = Alignment.centerRight;
                       Color cor = Colors.black12;
 
-                      if (_dados["id"] != mensagem["idUsuario"]) {
+                      if (_dadosUsuario.documentID != mensagem["idUsuario"]) {
                         alinhamento = Alignment.centerLeft;
                         cor = Colors.white;
                       }

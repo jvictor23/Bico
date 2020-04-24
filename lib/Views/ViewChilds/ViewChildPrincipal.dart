@@ -1,15 +1,11 @@
-import 'dart:async';
-
-import 'package:bico/Connection/Banco.dart';
+import 'package:bico/Controller/ControllerUsuario.dart';
 import 'package:bico/Entity/Operario.dart';
 import 'package:bico/Views/ViewChilds/ViewChildPerfil.dart';
 import 'package:bico/Views/ViewChilds/ViewChildPerfilOperario.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:sqflite/sqflite.dart';
-import 'package:via_cep_search/via_cep_search.dart';
+
 
 class ViewChildPrincipal extends StatefulWidget {
   @override
@@ -18,60 +14,23 @@ class ViewChildPrincipal extends StatefulWidget {
 
 class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
 
-  Firestore avaliacao = Firestore.instance;
-  var _dados;
+  ControllerUsuario _controllerUsuario = ControllerUsuario();
+  String _idUsuarioLogado;
 
-
-  Future<List<Operario>> _recuperarOperarios() async {
-    Firestore db = Firestore.instance;
-    QuerySnapshot snapshot;
-    //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: _dados["cidade"]).where("tipoPerfil", isEqualTo: "operario").getDocuments();
-      snapshot = await db.collection("Usuarios").orderBy("estrelas", descending: true).getDocuments();
-    //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: "Cocalzinho").getDocuments();
-
-    List<Operario> listaOperarios = List();
-
-    for (DocumentSnapshot item in snapshot.documents) {
-      Operario operario = Operario();
-      operario.nome = item.data["nome"];
-      operario.telefone = item.data["telefone"];
-      operario.cidade = item.data["cidade"];
-      operario.id = item.data["id"];
-      operario.tipo = item.data["tipo"];
-      operario.tipoPerfil = item.data["tipoPerfil"];
-      operario.email = item.data["email"];
-      operario.senha = item.data["senha"];
-      operario.estrelas = item.data["estrelas"];
-      operario.imagemPerfil = item.data["imagemPerfil"];
-
-      listaOperarios.add(operario);
-    }
-
-    return listaOperarios;
-  }
-
-  _iniciarBanco()async{
-    Database banco = await Banco().getBanco();
-    String sql = "SELECT * FROM Usuario";
-    List dado = await banco.rawQuery(sql);
-    setState(() {
-      _dados = dado[0];
-    });
-
-
+  _recuperarIdUsuarioLogado()async{
+    _idUsuarioLogado = await _controllerUsuario.recuperarIdUsuarioLogado();
   }
 
   @override
   void initState() {
     super.initState();
-    _iniciarBanco();
+    _recuperarIdUsuarioLogado();
   }
-
   @override
   Widget build(BuildContext context) {
-    return _dados == null ? Center(child: CircularProgressIndicator(),) : Scaffold(
+    return Scaffold(
         body: FutureBuilder<List<Operario>>(
-            future: _recuperarOperarios(),
+            future: _controllerUsuario.recuperarOperarios(),
             // ignore: missing_return
             builder: (context, snapshot) {
               switch (snapshot.connectionState) {
@@ -95,19 +54,19 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
                       itemBuilder: (context, index) {
                         List<Operario> listaItens = snapshot.data;
                         Operario operario = listaItens[index];
-
+                        
                         return GestureDetector(
                           onTap: () {
 
-                            if(_dados["id"] == operario.id ){
+                            if(_idUsuarioLogado == operario.id ){
                               Navigator.push(context, MaterialPageRoute(builder: (context) => ViewChildPerfil(true)));
                             }else{
                               Operario op = Operario();
                               op.nome = operario.nome;
                               op.telefone = operario.telefone;
-                              op.cidade = operario.cidade;
+                             // op.cidade = operario.cidade;
                               op.tipo = operario.tipo;
-                              op.imagemPerfil = operario.imagemPerfil;
+                              op.imagem = operario.imagem;
                               op.id = operario.id;
                               op.email = operario.email;
                               op.senha = operario.senha;
@@ -122,6 +81,7 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
 
                           },
                           child: Card(
+                            elevation: 10,
                               child: Container(
                                 height: 190,
                                 width: MediaQuery.of(context).size.width,
@@ -139,7 +99,7 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
                                                 borderRadius:
                                                 BorderRadius.circular(12),
                                                 child: CachedNetworkImage(
-                                                  imageUrl: operario.imagemPerfil == null? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : operario.imagemPerfil,
+                                                  imageUrl: operario.imagem == null? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : operario.imagem,
                                                   filterQuality:
                                                   FilterQuality.medium,
                                                   placeholder: (context, url) =>
@@ -168,11 +128,18 @@ class _ViewChildPrincipalState extends State<ViewChildPrincipal> {
                                                       fontWeight: FontWeight.w400),
                                                 ),
                                                 Text(
-                                                  operario.cidade,
+                                                  operario.cidade.first["nome"],
                                                   style: TextStyle(
                                                       fontSize: 16,
                                                       fontWeight: FontWeight.w400),
                                                 ),
+
+                                               operario.cidade.length > 1 ? Text(
+                                                  operario.cidade.last["nome"],
+                                                  style: TextStyle(
+                                                      fontSize: 16,
+                                                      fontWeight: FontWeight.w400),
+                                                ) : Padding(padding: EdgeInsets.all(0)),
                                                 Text(
                                                   operario.tipo,
                                                   style: TextStyle(

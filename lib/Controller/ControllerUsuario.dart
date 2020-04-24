@@ -1,28 +1,71 @@
 
+import 'dart:io';
+
+import 'package:bico/Entity/Operario.dart';
 import 'package:bico/Entity/Postagem.dart';
-import 'package:bico/Entity/Usuario.dart';
+import 'package:bico/Entity/Cliente.dart';
 import 'package:bico/Model/ModelUsuario.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 
 class ControllerUsuario{
-  ModelUsuario _modelCadastrar;
+  ModelUsuario _modelUsuario;
+
 
   ControllerUsuario(){
-    _modelCadastrar =  ModelUsuario();
+    _modelUsuario =  ModelUsuario();
   }
 
-  atualizarDados(var obj){
-    _modelCadastrar.atualizarDados(obj);
+  Future<String> recuperarIdUsuarioLogado(){
+    return _modelUsuario.recuperarIdUsuarioLogado();
   }
+
+  Future<DocumentSnapshot> recuperarUsuarioLogado(){
+    return  _modelUsuario.recuperarUsuarioLogado();
+  }
+
+  Future<List<Operario>> recuperarOperarios(){
+    return _modelUsuario.recuperarOperarios();
+  }
+
+  Future<List<Postagem>> recuperarPostagem(String id){
+    return _modelUsuario.recuperarPostagem(id);
+  }
+
+  Future<DocumentSnapshot> recuperarEstrelasIndividual(String id)async{
+    return await _modelUsuario.recuperarEstrelasIndividual(id);
+  }
+
+  avaliarOperario(String id, double rating){
+    _modelUsuario.avaliarOperario(id, rating);
+  }
+
+  atualizarOperarioLogado(Operario operario){
+    _modelUsuario.atualizarOperarioLogado(operario);
+  }
+
+  atualizarClienteLogado(Cliente cliente)async{
+    await _modelUsuario.atualizarClienteLogado(cliente);
+  }
+
+  Future<bool>uploadImage(File file){
+    return _modelUsuario.uploadImage(file);
+  }
+
+  uploadPostagem(Postagem postagem, BuildContext context){
+    _modelUsuario.uploadPostagem(postagem, context);
+  }
+
 
   realizarPostagem(Postagem postagem){
-    _modelCadastrar.realizarPostagem(postagem);
+    _modelUsuario.realizarPostagem(postagem);
   }
 
-  cadastrarUsuario(Usuario usuario, var context){
-    _modelCadastrar.cadastrarUsuario(usuario, context);
+  cadastrarUsuario(Cliente cliente, var context){
+    _modelUsuario.cadastrarUsuario(cliente, context);
   }
 
-  logarUsuario(Usuario usuario, var context){
-    _modelCadastrar.logarUsuario(usuario, context);
+  logarUsuario(Cliente cliente, var context){
+    _modelUsuario.logarUsuario(cliente, context);
   }
 }
