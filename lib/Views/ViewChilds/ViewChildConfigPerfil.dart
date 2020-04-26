@@ -188,7 +188,7 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
       Cliente cliente = Cliente();
       cliente.nome = _nome;
       cliente.telefone = _telefone;
-      //usuario.cidades = _controllerCidade.text;
+      cliente.cidade = _cidades;
       cliente.tipoPerfil = _ds.data["tipoPerfil"];
       cliente.email = _ds.data["email"];
       cliente.senha = _ds.data["senha"];

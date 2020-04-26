@@ -92,7 +92,7 @@ class _ViewChildConversasState extends State<ViewChildConversas> {
                       },
                       leading: CircleAvatar(
                         backgroundColor: Colors.grey,
-                        backgroundImage: NetworkImage(conversa.data["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : NetworkImage(conversa.data["imagem"])),
+                        backgroundImage: NetworkImage(conversa.data["imagem"] == null ? "https://cdn.pixabay.com/photo/2016/08/31/11/54/user-1633249_960_720.png" : conversa.data["imagem"]),
                       ),
                       title: Text(
                         conversa.data["nome"],

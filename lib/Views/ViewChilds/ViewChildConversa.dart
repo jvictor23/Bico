@@ -24,10 +24,13 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
   ScrollController _scrollController = ScrollController();
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   DocumentSnapshot _dadosUsuario;
+  bool _dadosPronto = false;
   
   _iniciarBanco() async {
 
     _dadosUsuario = await _controllerUsuario.recuperarUsuarioLogado();
+    print(_dadosUsuario.documentID);
+    print(widget.operario.id);
 
     _adicionarListenerConversa();
   }
@@ -101,6 +104,9 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
 
     stream.listen((snapshot) {
       _controller.add(snapshot);
+      setState(() {
+        _dadosPronto = true;
+      });
       _fimDaConversa();
     });
   }
@@ -112,7 +118,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
     });
   }
 
-  _apagarMensagem(DocumentSnapshot dados, List<DocumentSnapshot> mensagens)async{
+  /*_apagarMensagem(DocumentSnapshot dados, List<DocumentSnapshot> mensagens)async{
     await db
         .collection("Mensagens")
         .document(_dadosUsuario.documentID)
@@ -129,14 +135,8 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
 
     mensagens.removeLast();
 
-    DocumentSnapshot data = mensagens.last;
 
-
-
-
-
-
-  }
+  }*/
 
   @override
   void initState() {
@@ -149,6 +149,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
     var stream = StreamBuilder<QuerySnapshot>(
         stream: _controller.stream,
         builder: (context, snapshot) {
+          
           switch (snapshot.connectionState) {
             case ConnectionState.none:
             // TODO: Handle this case.
@@ -162,7 +163,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
             // TODO: Handle this case.
               break;
             case ConnectionState.done:
-
+            
               break;
           }
 
@@ -180,6 +181,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
                     controller: _scrollController,
                     itemCount: querySnapshot.documents.length,
                     itemBuilder: (context, indice) {
+                      
                       List<DocumentSnapshot> mensagens =
                       querySnapshot.documents.toList();
                       DocumentSnapshot mensagem = mensagens[indice];
@@ -249,7 +251,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
 
         });
 
-    var caixaTexto = Container(
+    var caixaTexto = _dadosPronto ? Container(
       padding: EdgeInsets.all(8),
       child: Row(
         children: <Widget>[
@@ -292,7 +294,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
           )
         ],
       ),
-    );
+    ) : null;
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.operario.nome),
@@ -302,7 +304,7 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
               child: Container(
                 padding: EdgeInsets.all(8),
                 child: Column(
-                  children: <Widget>[stream, caixaTexto],
+                  children: <Widget>[stream, _dadosPronto ? caixaTexto : Text("")],
                 ),
               )),
         ));

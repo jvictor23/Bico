@@ -67,18 +67,21 @@ class ModelUsuario {
 
   Future<DocumentSnapshot> recuperarUsuarioLogado() async {
     _user = await _auth.currentUser();
-    return _db.collection("Usuarios").document(_user.uid).get();
+    return await _db.collection("Usuarios").document(_user.uid).get();
   }
 
   Future<List<Operario>> recuperarOperarios() async {
     Firestore db = Firestore.instance;
     QuerySnapshot snapshot;
     //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: _dados["cidade"]).where("tipoPerfil", isEqualTo: "operario").getDocuments();
-    snapshot = await db
+    /*snapshot = await db
         .collection("Usuarios")
         .orderBy("estrelas", descending: true)
-        .getDocuments();
-    //snapshot = await db.collection("Usuarios").where("cidade", isEqualTo: "Cocalzinho").getDocuments();
+        .getDocuments();*/
+      
+    snapshot = await db.collection("Usuarios").where("cidade", arrayContains: {"nome" : "Cocalzinho de Goiás", "uf" : "GO"}).where("tipoPerfil", isEqualTo: "operario").where("tipo", isEqualTo: "Pintor").getDocuments();
+    print(snapshot.documents.length);
+    
 
     List<Operario> listaOperarios = List();
     List<Map<String,dynamic>> cidades = List();
@@ -95,7 +98,7 @@ class ModelUsuario {
       operario.nome = item.data["nome"];
       operario.telefone = item.data["telefone"];
       operario.cidade = cidades.toList();
-      operario.id = item.data["id"];
+      operario.id = item.documentID;
       operario.tipo = item.data["tipo"];
       operario.tipoPerfil = item.data["tipoPerfil"];
       operario.email = item.data["email"];
