@@ -8,7 +8,6 @@ import 'package:bico/Entity/Operario.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-
 class ViewChildConversa extends StatefulWidget {
   @override
   _ViewChildConversaState createState() => _ViewChildConversaState();
@@ -18,16 +17,15 @@ class ViewChildConversa extends StatefulWidget {
 
 class _ViewChildConversaState extends State<ViewChildConversa> {
   TextEditingController _mensagemController = TextEditingController();
-  
+
   Firestore db = Firestore.instance;
   final _controller = StreamController<QuerySnapshot>.broadcast();
   ScrollController _scrollController = ScrollController();
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   DocumentSnapshot _dadosUsuario;
   bool _dadosPronto = false;
-  
-  _iniciarBanco() async {
 
+  _iniciarBanco() async {
     _dadosUsuario = await _controllerUsuario.recuperarUsuarioLogado();
     print(_dadosUsuario.documentID);
     print(widget.operario.id);
@@ -53,11 +51,9 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
 
       _salvarConversa(mensagem);
     }
-
-
   }
 
-  _salvarConversa(Mensagem mensagem){
+  _salvarConversa(Mensagem mensagem) {
     //Salvar conversa remetente;
     Conversa cRemetente = Conversa();
     cRemetente.idRemetente = _dadosUsuario.documentID;
@@ -101,19 +97,19 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
         .orderBy("time", descending: false)
         .snapshots();
 
-
     stream.listen((snapshot) {
-      _controller.add(snapshot);
-      setState(() {
-        _dadosPronto = true;
+      Timer(Duration(milliseconds: 500), () {
+        _controller.add(snapshot);
+        setState(() {
+          _dadosPronto = true;
+        });
+        _fimDaConversa();
       });
-      _fimDaConversa();
     });
   }
 
-  _fimDaConversa(){
-
-    Timer(Duration(milliseconds: 350), (){
+  _fimDaConversa() {
+    Timer(Duration(milliseconds: 350), () {
       _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
     });
   }
@@ -149,10 +145,9 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
     var stream = StreamBuilder<QuerySnapshot>(
         stream: _controller.stream,
         builder: (context, snapshot) {
-          
           switch (snapshot.connectionState) {
             case ConnectionState.none:
-            // TODO: Handle this case.
+              // TODO: Handle this case.
               break;
             case ConnectionState.waiting:
               return Center(
@@ -160,20 +155,18 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
               );
               break;
             case ConnectionState.active:
-            // TODO: Handle this case.
+              // TODO: Handle this case.
               break;
             case ConnectionState.done:
-            
               break;
           }
-
 
           QuerySnapshot querySnapshot = snapshot.data;
           if (snapshot.hasError) {
             return Expanded(
                 child: Center(
-                  child: Text("Erro ao carregar mensagens"),
-                ));
+              child: Text("Erro ao carregar mensagens"),
+            ));
           } else {
             if (snapshot.hasData) {
               return Expanded(
@@ -181,9 +174,8 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
                     controller: _scrollController,
                     itemCount: querySnapshot.documents.length,
                     itemBuilder: (context, indice) {
-                      
                       List<DocumentSnapshot> mensagens =
-                      querySnapshot.documents.toList();
+                          querySnapshot.documents.toList();
                       DocumentSnapshot mensagem = mensagens[indice];
                       Alignment alinhamento = Alignment.centerRight;
                       Color cor = Colors.black12;
@@ -198,7 +190,8 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
                           child: Padding(
                               padding: EdgeInsets.all(6),
                               child: GestureDetector(
-                                onLongPress: /*_dados["id"] == mensagem["idUsuario"]?(){
+                                onLongPress:
+                                    /*_dados["id"] == mensagem["idUsuario"]?(){
                                     showDialog(
                                       context: context,
                                       builder: (context){
@@ -221,80 +214,80 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
                                         );
                                       }
                                     );
-                                  }:*/null,
+                                  }:*/
+                                    null,
                                 child: Container(
                                   width:
-                                  MediaQuery.of(context).size.width * 0.8,
+                                      MediaQuery.of(context).size.width * 0.8,
                                   padding: EdgeInsets.all(16),
                                   decoration: BoxDecoration(
                                     color: cor,
                                     borderRadius:
-                                    BorderRadius.all(Radius.circular(8)),
+                                        BorderRadius.all(Radius.circular(8)),
                                   ),
                                   child: Text(
                                     mensagem["mensagem"],
                                     style: TextStyle(fontSize: 16),
-
                                   ),
                                 ),
-                              )
-                          ));
+                              )));
                     }),
               );
             } else {
               return Expanded(
                   child: Center(
-                    child: Text("Seja o primeiro a enviar uma mensagem"),
-                  ));
+                child: Text("Seja o primeiro a enviar uma mensagem"),
+              ));
             }
           }
-
         });
 
-    var caixaTexto = _dadosPronto ? Container(
-      padding: EdgeInsets.all(8),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: Padding(
-              padding: EdgeInsets.only(right: 8),
-              child: TextField(
-                  onTap: (){
-                    _fimDaConversa();
-                  },
-                  controller: _mensagemController,
-                  textCapitalization: TextCapitalization.sentences,
-                  cursorColor: Colors.black,
-                  style: TextStyle(
-                    color: Colors.black,
+    var caixaTexto = _dadosPronto
+        ? Container(
+            padding: EdgeInsets.all(8),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8),
+                    child: TextField(
+                        onTap: () {
+                          _fimDaConversa();
+                        },
+                        controller: _mensagemController,
+                        textCapitalization: TextCapitalization.sentences,
+                        cursorColor: Colors.black,
+                        style: TextStyle(
+                          color: Colors.black,
+                        ),
+                        keyboardType: TextInputType.text,
+                        decoration: InputDecoration(
+                            prefixIcon: Padding(
+                              padding: EdgeInsets.all(0.0),
+                            ),
+                            hintText: "Digite aqui...",
+                            hintStyle: TextStyle(color: Colors.black),
+                            border: OutlineInputBorder(
+                                borderRadius: const BorderRadius.all(
+                                    const Radius.circular(30.0)),
+                                borderSide: BorderSide(
+                                  color: Colors.black,
+                                )))),
                   ),
-                  keyboardType: TextInputType.text,
-                  decoration: InputDecoration(
-                      prefixIcon: Padding(
-                        padding: EdgeInsets.all(0.0),
-                      ),
-                      hintText: "Digite aqui...",
-                      hintStyle: TextStyle(color: Colors.black),
-                      border: OutlineInputBorder(
-                          borderRadius: const BorderRadius.all(
-                              const Radius.circular(30.0)),
-                          borderSide: BorderSide(
-                            color: Colors.black,
-                          )))),
+                ),
+                FloatingActionButton(
+                  onPressed: () => _enviarMensagem(),
+                  backgroundColor: Cores().corButton(),
+                  child: Icon(
+                    Icons.send,
+                    color: Cores().corIcons(),
+                  ),
+                  mini: true,
+                )
+              ],
             ),
-          ),
-          FloatingActionButton(
-            onPressed: () => _enviarMensagem(),
-            backgroundColor: Cores().corButton(),
-            child: Icon(
-              Icons.send,
-              color: Cores().corIcons(),
-            ),
-            mini: true,
           )
-        ],
-      ),
-    ) : null;
+        : null;
     return Scaffold(
         appBar: AppBar(
           title: Text(widget.operario.nome),
@@ -302,11 +295,11 @@ class _ViewChildConversaState extends State<ViewChildConversa> {
         body: Container(
           child: SafeArea(
               child: Container(
-                padding: EdgeInsets.all(8),
-                child: Column(
-                  children: <Widget>[stream, _dadosPronto ? caixaTexto : Text("")],
-                ),
-              )),
+            padding: EdgeInsets.all(8),
+            child: Column(
+              children: <Widget>[stream, _dadosPronto ? caixaTexto : Text("")],
+            ),
+          )),
         ));
   }
 }

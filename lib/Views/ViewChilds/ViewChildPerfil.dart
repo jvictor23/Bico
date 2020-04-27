@@ -25,7 +25,9 @@ class _ViewChildPerfilState extends State<ViewChildPerfil> {
   ControllerUsuario _controllerUsuario = ControllerUsuario();
   Firestore db;
 DocumentSnapshot _dadosUsuario;
+
   _iniciarBanco() async {
+
     CollectionReference postagem;
     _dadosUsuario = await _controllerUsuario.recuperarUsuarioLogado();
     if (_dadosUsuario.data["tipoPerfil"] == "operario") {
@@ -39,6 +41,7 @@ DocumentSnapshot _dadosUsuario;
     setState(() {
       _dadosPronto = true;
     });
+    
   }
 
   @override

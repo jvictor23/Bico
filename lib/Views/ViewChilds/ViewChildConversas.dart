@@ -33,9 +33,6 @@ class _ViewChildConversasState extends State<ViewChildConversas> {
 
     stream.listen((snapshot) {
       _controller.add(snapshot);
-      Timer(Duration(milliseconds: 500), () {
-
-      });
     });
   }
 

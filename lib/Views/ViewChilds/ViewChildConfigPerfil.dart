@@ -47,12 +47,14 @@ class _ViewChildConfigPerfilState extends State<ViewChildConfigPerfil> {
       _telefone = _ds.data["telefone"];
       _tipo = _ds.data["tipo"];
       _imagem = _ds.data["imagem"];
+
       for(var city in _ds.data["cidade"]){
         Cidade cidade = Cidade();
         cidade.nome = city["nome"];
         cidade.uf = city["uf"];
         _cidades.add(cidade.toMap());
       }
+      
       _controllerCidade1 = TextEditingController(text: _cidades.first["nome"]);
       _uf1 = _cidades.first["uf"];
       if(_cidades.length > 1){

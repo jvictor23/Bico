@@ -20,8 +20,8 @@ class ControllerUsuario{
     return _modelUsuario.recuperarIdUsuarioLogado();
   }
 
-  Future<DocumentSnapshot> recuperarUsuarioLogado(){
-    return  _modelUsuario.recuperarUsuarioLogado();
+  Future<DocumentSnapshot> recuperarUsuarioLogado()async{
+    return await _modelUsuario.recuperarUsuarioLogado();
   }
 
   Future<List<Operario>> recuperarOperarios(){

@@ -80,8 +80,7 @@ class ModelUsuario {
         .getDocuments();*/
       
     snapshot = await db.collection("Usuarios").where("cidade", arrayContains: {"nome" : "Cocalzinho de Goiás", "uf" : "GO"}).where("tipoPerfil", isEqualTo: "operario").where("tipo", isEqualTo: "Pintor").getDocuments();
-    print(snapshot.documents.length);
-    
+       
 
     List<Operario> listaOperarios = List();
     List<Map<String,dynamic>> cidades = List();
@@ -126,7 +125,7 @@ class ModelUsuario {
   atualizarOperarioAvaliado(Operario operario) async {
     _user = await _auth.currentUser();
     DocumentSnapshot ds =
-        await _db.collection("Usuario").document(_user.uid).get();
+        await _db.collection("Usuarios").document(_user.uid).get();
     operario.nome = ds.data["nome"];
     operario.telefone = ds.data["telefone"];
     operario.email = ds.data["email"];
